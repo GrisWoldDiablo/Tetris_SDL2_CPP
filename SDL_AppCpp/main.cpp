@@ -9,9 +9,9 @@
 using namespace std;
 using namespace std::chrono;
 
-const int WIDTH = 480; //480
-const int HEIGHT = 800;//640
-const int BOXSIZE = 35;
+const int WIDTH = 450;  //450
+const int HEIGHT = 800; //800
+const int BOXSIZE = 35; //35
 random_device rando;
 
 class MyCoord
@@ -184,7 +184,7 @@ int main(int argc, char ** argv)
 
 			if (event.key.keysym.sym == SDLK_SPACE)
 			{
-				if (allShapes[currentShapeChoice].anchorPoint.y >=2)
+				if (allShapes[currentShapeChoice].anchorPoint.y >=1)
 				{
 					do
 					{
@@ -254,8 +254,8 @@ int main(int argc, char ** argv)
 				{
 					pixels[(i * WIDTH + j)] = SDL_MapRGB(fmt, 0, 0, 0);
 				}
-				else if (j < BOXSIZE || j > WIDTH - (WIDTH *2/ BOXSIZE) - BOXSIZE ||
-					     i > HEIGHT - BOXSIZE - (HEIGHT / BOXSIZE) || i <= BOXSIZE)
+				else if (j < BOXSIZE || j >(WIDTH / BOXSIZE)*BOXSIZE - BOXSIZE ||
+					     i >(HEIGHT / BOXSIZE)*BOXSIZE - BOXSIZE || i <= BOXSIZE)
 				{
 					pixels[(i * WIDTH + j)] = SDL_MapRGB(fmt, 100, 100, 100);
 				}
@@ -436,7 +436,7 @@ void moveShape(MyShape &shape, Direction direction)
 			}
 			
 			setShapeLocation();
-			if (allShapes[currentShapeChoice].anchorPoint.y == 1)
+			if (allShapes[currentShapeChoice].anchorPoint.y == 1 && allShapes[currentShapeChoice].anchorPoint.x == (WIDTH / BOXSIZE / 2))
 			{
 				resetBoard();
 			}
