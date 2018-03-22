@@ -4,11 +4,13 @@
 #include <vector>
 #include <chrono>
 
+
+
 using namespace std;
 using namespace std::chrono;
 
 const int WIDTH = 480; //480
-const int HEIGHT = 640;//640
+const int HEIGHT = 800;//640
 const int BOXSIZE = 35;
 random_device rando;
 
@@ -33,6 +35,8 @@ public:
 	short r;
 	short g;
 	short b;
+
+	//MyShape(const MyShape&);
 
 	MyShape(MyCoord anchorPoint, vector<MyCoord> squareCoordinates, short r, short g, short b) {
 		this->anchorPoint = anchorPoint;
@@ -89,6 +93,7 @@ void gameLoop();
 void setShapeLocation();
 void drawAllShapes(vector<MyShape>);
 void drawShape(MyShape);
+void drawNextShape(MyShape);
 void moveAllShapes(vector<MyShape>&, Direction);
 void moveShape(MyShape&,Direction);
 bool frameRate(int);
@@ -107,23 +112,24 @@ bool squareLocationTemp[(WIDTH / BOXSIZE)][(HEIGHT / BOXSIZE)] = {};
 
 __int64 currentDeltaTime, nextDeltaTime;
 __int64 currentFrameTime, nextFrameTime;
-float delta, speed;
-int currentShapeChoice;
+float delta, speed = 2;
+int currentShapeChoice , nextShapeChoice;
 
 vector<MyShape> allShapes =
 {
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,0 },{ 1,0 },{ 2,0 },{ 3,0 } },   0, 240, 240), // Line
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,0 },{ 0,1 },{ 1,0 },{ 1,1 } }, 240, 240,   0), // Square
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,0 },{ 1,0 },{ 1,1 },{ 2,1 } }, 240,   0,   0), // ¯-_
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,1 },{ 1,1 },{ 1,0 },{ 2,0 } },   0, 240,   0), // _-¯
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,1 },{ 1,1 },{ 1,0 },{ 2,1 } }, 160,   0, 240), // _|_
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,0 },{ 1,0 },{ 1,1 },{ 1,2 } }, 240, 160,   0), // ¯|
-	MyShape(MyCoord((WIDTH / BOXSIZE / 2),0),{ { 0,0 },{ 1,0 },{ 0,1 },{ 0,2 } },   0,   0, 240)  // |¯
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,0 },{ 1,0 },{ 2,0 },{ 3,0 } },   0, 240, 240), // Line
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,0 },{ 0,1 },{ 1,0 },{ 1,1 } }, 240, 240,   0), // Square
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,0 },{ 1,0 },{ 1,1 },{ 2,1 } }, 240,   0,   0), // ¯-_
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,1 },{ 1,1 },{ 1,0 },{ 2,0 } },   0, 240,   0), // _-¯
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,1 },{ 1,1 },{ 1,0 },{ 2,1 } }, 160,   0, 240), // _|_
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,0 },{ 1,0 },{ 2,0 },{ 2,1 } }, 240, 160,   0), // |¯¯
+	MyShape(MyCoord((WIDTH / BOXSIZE / 2),1),{ { 0,0 },{ 1,0 },{ 2,0 },{ 0,1 } },   0,   0, 240)  // ¯¯|
 };
 
 int main(int argc, char ** argv)
 {
 	
+
 	bool leftMouseButtonDown = false;
 	bool quit = false;
 	SDL_Event event;
@@ -139,8 +145,8 @@ int main(int argc, char ** argv)
 	SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
 	SDL_Texture * texture = SDL_CreateTexture(renderer,
 		SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
-
 	currentShapeChoice = rando() % 7;
+	nextShapeChoice    = rando() % 7;
 	resetBoard();
 
 	
@@ -185,6 +191,7 @@ int main(int argc, char ** argv)
 						moveShape(allShapes[currentShapeChoice], DOWN);
 
 					} while (!collision(allShapes[currentShapeChoice], DOWN));
+					//moveShape(allShapes[currentShapeChoice], UP);
 				}
 			}
 			if (event.key.keysym.sym == SDLK_e)
@@ -247,13 +254,19 @@ int main(int argc, char ** argv)
 				{
 					pixels[(i * WIDTH + j)] = SDL_MapRGB(fmt, 0, 0, 0);
 				}
+				else if (j < BOXSIZE || j > WIDTH - (WIDTH *2/ BOXSIZE) - BOXSIZE ||
+					     i > HEIGHT - BOXSIZE - (HEIGHT / BOXSIZE) || i <= BOXSIZE)
+				{
+					pixels[(i * WIDTH + j)] = SDL_MapRGB(fmt, 100, 100, 100);
+				}
+				if (j < BOXSIZE * 2 && i < BOXSIZE)
+				{
+					pixels[(i * WIDTH + j)] = SDL_MapRGB(fmt, 150, 150, 150);
+				}
 			}
 		}
 
 		gameLoop();
-		//drawShape(lShape);
-		//drawAllShapes(allShapes);
-		
 		
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
@@ -326,7 +339,8 @@ float deltaSpeed()
 void gameLoop()
 {
 	drawShape(allShapes[currentShapeChoice]);
-	if (frameRate(1))
+	drawNextShape(allShapes[nextShapeChoice]);
+	if (frameRate(speed))
 	{
 		moveShape(allShapes[currentShapeChoice], DOWN);
 	}
@@ -373,6 +387,30 @@ void drawShape(MyShape shape)
 	}
 }
 
+void drawNextShape(MyShape shape)
+{
+	MyShape smallShape = MyShape(shape);
+	smallShape.resetPiece();
+	int shapeLenght = smallShape.squareCoordinates.size();
+	smallShape.anchorPoint = { 1,1 };
+	int smallBoxSize = BOXSIZE / 3;
+	for (int i = 0; i < shapeLenght; i++)
+	{
+		int y = (smallShape.squareCoordinates[i].y + smallShape.anchorPoint.y) * smallBoxSize;
+		for (int j = y; j < y + smallBoxSize; j++)
+		{
+			int x = (smallShape.squareCoordinates[i].x + smallShape.anchorPoint.x)  * smallBoxSize;
+			for (int k = x; k < x + smallBoxSize; k++)
+			{
+				if (j <= HEIGHT && k < WIDTH)
+				{
+					pixels[(j)* WIDTH + (k)] = SDL_MapRGB(fmt, smallShape.r, smallShape.g, smallShape.b);
+				}
+			}
+		}
+	}
+}
+
 void moveAllShapes(vector<MyShape> &shapes, Direction direction) {
 	for (int i = 0; i < shapes.size(); i++)
 	{
@@ -402,7 +440,9 @@ void moveShape(MyShape &shape, Direction direction)
 			{
 				resetBoard();
 			}
-			currentShapeChoice = rando() % 7;
+			currentShapeChoice = nextShapeChoice;
+			nextShapeChoice = rando() % 7;
+			allShapes[nextShapeChoice].resetPiece();
 			allShapes[currentShapeChoice].anchorPoint.x = (WIDTH / BOXSIZE / 2);
 			allShapes[currentShapeChoice].anchorPoint.y = 1;
 			allShapes[currentShapeChoice].resetPiece();
@@ -578,21 +618,7 @@ void eraseLine(int lineIndex) {
 	}
 
 	int liner = (BOXSIZE * lineIndex);
-	/*for (int i = 0,ii = 0; i < HEIGHT; i++,ii++)
-	{
-		for (int j = 0; j < WIDTH; j++)
-		{
-			if (i >= liner && i <= liner)
-			{
-				ii--;
-			}
-			if (ii < HEIGHT)
-			{
-				pixelsBackgroundTemp[(i * WIDTH + j)] = pixelsBackground[(ii * WIDTH + j)];
-			}
-		}
-	}*/
-
+	
 	for (int i = HEIGHT - 1 ,ii = HEIGHT - 1; i >= 0; i--,ii--)
 	{
 		if (i  == liner + BOXSIZE)
@@ -602,7 +628,7 @@ void eraseLine(int lineIndex) {
 		for (int j = WIDTH - 1; j >= 0; j--)
 		{
 			
-			if (ii >= 0)
+			if (ii >= BOXSIZE)
 			{
 				pixelsBackgroundTemp[(i * WIDTH + j)] = pixelsBackground[(ii * WIDTH + j)];
 			}
